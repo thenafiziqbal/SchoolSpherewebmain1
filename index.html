@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>School Sphere - Student Portal</title>
+    
+    <!-- Icons & Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary: #4f46e5; /* Indigo */
+            --primary-dark: #4338ca;
+            --secondary: #eef2ff;
+            --accent: #f43f5e; /* Rose for alerts/hearts */
+            --text-main: #111827;
+            --text-sub: #6b7280;
+            --bg-body: #f3f4f6;
+            --card-bg: #ffffff;
+            --shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.1);
+            --radius: 16px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Hind Siliguri', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--bg-body); color: var(--text-main); padding-bottom: 90px; height: 100vh; overflow-y: scroll; }
+
+        /* --- Login Overlay --- */
+        #login-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, #e0e7ff 0%, #ffffff 100%);
+            z-index: 9999; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; padding: 30px;
+            transition: opacity 0.3s ease;
+        }
+        .login-card {
+            background: white; width: 100%; max-width: 350px;
+            padding: 30px; border-radius: 20px; box-shadow: 0 10px 40px rgba(79, 70, 229, 0.15);
+            text-align: center;
+        }
+        .login-logo { font-size: 45px; color: var(--primary); margin-bottom: 10px; }
+        .inp-group { margin-bottom: 15px; text-align: left; }
+        .inp-group input {
+            width: 100%; padding: 14px; border: 1px solid #e5e7eb;
+            border-radius: 12px; background: #f9fafb; font-size: 15px; transition: 0.3s;
+        }
+        .inp-group input:focus { border-color: var(--primary); outline: none; background: white; }
+        .btn-main {
+            width: 100%; padding: 14px; background: var(--primary); color: white;
+            border: none; border-radius: 12px; font-weight: 600; font-size: 16px;
+            cursor: pointer; transition: 0.3s; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+        .btn-main:active { transform: scale(0.98); }
+
+        /* --- Main Layout --- */
+        #app-container { display: none; max-width: 600px; margin: 0 auto; }
+        
+        .header {
+            position: sticky; top: 0; background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(10px); padding: 15px 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            z-index: 100; border-bottom: 1px solid #f3f4f6;
+        }
+        .brand-name { font-weight: 700; font-size: 20px; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+
+        /* --- Bottom Navigation --- */
+        .bottom-nav {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            width: 90%; max-width: 400px; background: white;
+            display: flex; justify-content: space-between; padding: 12px 25px;
+            border-radius: 50px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); z-index: 1000;
+        }
+        .nav-item { 
+            font-size: 22px; color: #9ca3af; position: relative; 
+            cursor: pointer; transition: 0.3s; 
+        }
+        .nav-item.active { color: var(--primary); transform: translateY(-3px); }
+        .nav-item.active::after {
+            content: ''; position: absolute; bottom: -5px; left: 50%;
+            transform: translateX(-50%); width: 5px; height: 5px;
+            background: var(--primary); border-radius: 50%;
+        }
+
+        /* --- Sections --- */
+        .section { display: none; padding: 15px; animation: fadeUp 0.4s ease; }
+        .section.active { display: block; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- Post Card --- */
+        .card { 
+            background: var(--card-bg); border-radius: var(--radius); 
+            padding: 15px; margin-bottom: 20px; box-shadow: var(--shadow); border: 1px solid #fff;
+        }
+        .post-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+        .admin-avatar { width: 45px; height: 45px; border-radius: 50%; background: var(--secondary); display: flex; align-items: center; justify-content: center; color: var(--primary); font-size: 20px; }
+        .post-img { width: 100%; border-radius: 12px; margin-top: 10px; max-height: 400px; object-fit: cover; }
+        
+        .interaction-bar { 
+            display: flex; justify-content: space-between; margin-top: 15px; 
+            border-top: 1px solid #f3f4f6; padding-top: 10px; 
+        }
+        .action-pill { 
+            display: flex; align-items: center; gap: 6px; padding: 6px 12px; 
+            border-radius: 20px; background: transparent; color: var(--text-sub); 
+            font-size: 14px; font-weight: 500; cursor: pointer; transition: 0.2s;
+        }
+        .action-pill:active { background: #f3f4f6; }
+        .action-pill.liked { color: var(--accent); background: #fff1f2; }
+
+        /* --- Comments --- */
+        .comments-area { background: #f9fafb; border-radius: 12px; padding: 10px; margin-top: 10px; display: none; }
+        .comment-input-wrp { display: flex; gap: 8px; margin-bottom: 10px; }
+        .comment-input { flex: 1; padding: 8px 12px; border-radius: 20px; border: 1px solid #e5e7eb; font-size: 13px; outline: none; }
+        .send-btn { width: 35px; height: 35px; background: var(--primary); color: white; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .single-comment { font-size: 13px; background: white; padding: 8px 10px; border-radius: 8px; margin-bottom: 6px; border: 1px solid #eee; }
+
+        /* --- Teachers & Doctors Profile --- */
+        .profile-card { display: flex; gap: 15px; align-items: center; }
+        .p-img { width: 70px; height: 70px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary); padding: 2px; }
+        .contact-row { display: flex; gap: 10px; margin-top: 8px; }
+        .c-btn { 
+            flex: 1; padding: 6px; text-align: center; border-radius: 6px; 
+            font-size: 12px; color: white; text-decoration: none; 
+            display: flex; align-items: center; justify-content: center; gap: 5px;
+        }
+        
+        /* --- Notice Board --- */
+        .notice-item { 
+            position: relative; padding-left: 15px; border-left: 4px solid var(--primary);
+            background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px;
+            box-shadow: var(--shadow);
+        }
+
+        /* --- Result Section --- */
+        .search-box { background: white; padding: 25px; border-radius: 20px; box-shadow: var(--shadow); text-align: center; }
+        #marksheet { 
+            display: none; background: white; padding: 30px; margin-top: 20px; 
+            border-radius: 5px; border: 2px solid #000; color: black;
+            font-family: 'Times New Roman', serif; position: relative;
+        }
+        .ms-header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
+        .ms-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .ms-table th, .ms-table td { border: 1px solid #000; padding: 8px; text-align: center; font-size: 14px; }
+        .ms-info { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: left; margin-bottom: 10px; }
+
+        /* Print Mode */
+        @media print {
+            body * { visibility: hidden; }
+            #marksheet, #marksheet * { visibility: visible; }
+            #marksheet { position: fixed; top: 0; left: 0; width: 100%; height: 100%; border: none; margin: 0; padding: 20px; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 1. LOGIN SCREEN -->
+    <div id="login-overlay">
+        <div class="login-card">
+            <i class="fas fa-school login-logo"></i>
+            <h2 style="margin-bottom: 5px; color: var(--text-main);">স্বাগতম</h2>
+            <p style="color: var(--text-sub); margin-bottom: 25px; font-size: 14px;">School Sphere প্যানেলে লগইন করুন</p>
+            
+            <div class="inp-group">
+                <input type="email" id="email" placeholder="ইমেইল এড্রেস">
+            </div>
+            <div class="inp-group">
+                <input type="password" id="password" placeholder="পাসওয়ার্ড">
+            </div>
+            <button class="btn-main" onclick="authLogin()">লগইন</button>
+            <p id="auth-error" style="color: var(--accent); font-size: 12px; margin-top: 10px;"></p>
+        </div>
+    </div>
+
+    <!-- 2. MAIN APPLICATION -->
+    <div id="app-container">
+        
+        <!-- Header -->
+        <div class="header">
+            <div class="brand-name"><i class="fas fa-graduation-cap"></i> School Sphere</div>
+            <i class="fas fa-power-off" onclick="authLogout()" style="color: #ef4444; font-size: 18px; cursor: pointer;"></i>
+        </div>
+
+        <!-- Section: HOME (Feed) -->
+        <div id="tab-home" class="section active">
+            <h4 style="margin-bottom: 15px; color: var(--text-sub);">লেটেস্ট আপডেট</h4>
+            <div id="feed-container">
+                <!-- Posts will load here -->
+                <div style="text-align:center; padding: 20px; color: #ccc;">
+                    <i class="fas fa-spinner fa-spin fa-2x"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section: TEACHERS -->
+        <div id="tab-teachers" class="section">
+            <h4 style="margin-bottom: 15px; color: var(--text-sub);">শিক্ষকবৃন্দ</h4>
+            <div id="teacher-list"></div>
+        </div>
+
+        <!-- Section: DOCTORS -->
+        <div id="tab-doctors" class="section">
+            <h4 style="margin-bottom: 15px; color: var(--text-sub);">মেডিকেল কর্নার</h4>
+            <div id="doctor-list"></div>
+        </div>
+
+        <!-- Section: RESULT -->
+        <div id="tab-result" class="section">
+            <div class="search-box no-print">
+                <h3 style="color: var(--primary); margin-bottom: 15px;">ফলাফল অনুসন্ধান</h3>
+                <input type="text" id="res-class" class="inp-group" placeholder="শ্রেণী (Ex: 9, 10)" style="width: 100%; padding:10px; margin-bottom:10px; border:1px solid #ddd; border-radius:8px;">
+                <input type="number" id="res-roll" class="inp-group" placeholder="রোল নম্বর" style="width: 100%; padding:10px; margin-bottom:10px; border:1px solid #ddd; border-radius:8px;">
+                <button class="btn-main" onclick="fetchResult()">রেজাল্ট দেখুন</button>
+            </div>
+
+            <!-- Printable Marksheet -->
+            <div id="marksheet">
+                <div class="ms-header">
+                    <img id="ms-logo" src="" style="height: 60px; margin-bottom:5px;" onerror="this.style.display='none'">
+                    <h2 id="ms-school-name" style="text-transform: uppercase;">School Name</h2>
+                    <p>ACADEMIC TRANSCRIPT</p>
+                </div>
+                <div class="ms-info">
+                    <div><b>Name:</b> <span id="ms-name"></span></div>
+                    <div><b>Roll No:</b> <span id="ms-roll"></span></div>
+                    <div><b>Class:</b> <span id="ms-class"></span></div>
+                    <div><b>Session:</b> <span id="ms-session">2024</span></div>
+                </div>
+                <table class="ms-table">
+                    <thead>
+                        <tr><th>Subject</th><th>Marks</th><th>Grade</th><th>GPA</th></tr>
+                    </thead>
+                    <tbody id="ms-body"></tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3" style="text-align: right; font-weight: bold;">Final GPA</td>
+                            <td style="font-weight: bold;" id="ms-gpa"></td>
+                        </tr>
+                    </tfoot>
+                </table>
+                <div style="margin-top: 40px; display: flex; justify-content: space-between;">
+                    <div style="text-align: center; border-top: 1px solid #000; padding-top: 5px; width: 100px;">Guardian</div>
+                    <div style="text-align: center; border-top: 1px solid #000; padding-top: 5px; width: 100px;">Principal</div>
+                </div>
+                <button class="btn-main no-print" onclick="window.print()" style="margin-top: 20px; background: #1f2937;">
+                    <i class="fas fa-print"></i> ডাউনলোড / প্রিন্ট
+                </button>
+            </div>
+        </div>
+
+        <!-- Section: NOTICE -->
+        <div id="tab-notice" class="section">
+            <h4 style="margin-bottom: 15px; color: var(--text-sub);">নোটিশ বোর্ড</h4>
+            <div id="notice-list"></div>
+        </div>
+
+        <div style="height: 20px;"></div> <!-- Spacer -->
+    </div>
+
+    <!-- Bottom Navigation Bar -->
+    <div class="bottom-nav" id="btm-nav" style="display: none;">
+        <div class="nav-item active" onclick="navTo('home', this)"><i class="fas fa-home"></i></div>
+        <div class="nav-item" onclick="navTo('teachers', this)"><i class="fas fa-chalkboard-user"></i></div>
+        <div class="nav-item" onclick="navTo('doctors', this)"><i class="fas fa-user-doctor"></i></div>
+        <div class="nav-item" onclick="navTo('result', this)"><i class="fas fa-file-signature"></i></div>
+        <div class="nav-item" onclick="navTo('notice', this)"><i class="fas fa-bullhorn"></i></div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getDatabase, ref, onValue, get, push, update, runTransaction, child } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
+        import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+
+        // --- FIREBASE CONFIG (আপনারটা ব্যবহার করুন) ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyD-IFZx9KIAT3gY9SXNMqPK9mHXfuvrXJA",
+            authDomain: "updetsosalfottball.firebaseapp.com",
+            databaseURL: "https://updetsosalfottball-default-rtdb.firebaseio.com",
+            projectId: "updetsosalfottball",
+            storageBucket: "updetsosalfottball.firebasestorage.app",
+            messagingSenderId: "693292356197",
+            appId: "1:693292356197:web:03ee1213536974ae306c8c",
+            measurementId: "G-QYSHMPHPDP"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const auth = getAuth(app);
+        
+        let currentUser = null;
+        let userData = {};
+
+        // --- AUTH LOGIC ---
+        window.authLogin = () => {
+            const e = document.getElementById('email').value;
+            const p = document.getElementById('password').value;
+            const err = document.getElementById('auth-error');
+            
+            if(!e || !p) { err.innerText = "সব ঘর পূরণ করুন"; return; }
+            err.innerText = "অপেক্ষা করুন...";
+
+            signInWithEmailAndPassword(auth, e, p).catch(e => {
+                err.innerText = "ভুল ইমেইল বা পাসওয়ার্ড!";
+            });
+        };
+
+        window.authLogout = () => signOut(auth);
+
+        onAuthStateChanged(auth, (user) => {
+            const loginView = document.getElementById('login-overlay');
+            const appView = document.getElementById('app-container');
+            const nav = document.getElementById('btm-nav');
+
+            if (user) {
+                currentUser = user;
+                // Fetch User Name
+                get(ref(db, `users/${user.uid}`)).then(snap => {
+                    userData = snap.val() || { name: 'Student' };
+                });
+                
+                loginView.style.opacity = '0';
+                setTimeout(() => loginView.style.display = 'none', 300);
+                appView.style.display = 'block';
+                nav.style.display = 'flex';
+                
+                initApp(); // Load Data
+            } else {
+                loginView.style.display = 'flex';
+                loginView.style.opacity = '1';
+                appView.style.display = 'none';
+                nav.style.display = 'none';
+            }
+        });
+
+        // --- NAVIGATION ---
+        window.navTo = (tabName, el) => {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+            el.classList.add('active');
+        };
+
+        // --- DATA LOADERS ---
+        function initApp() {
+            loadPosts();
+            loadTeachers();
+            loadDoctors();
+            loadNotices();
+        }
+
+        // 1. POSTS & FEED
+        function loadPosts() {
+            onValue(ref(db, 'posts'), (snap) => {
+                const container = document.getElementById('feed-container');
+                const posts = [];
+                snap.forEach(child => posts.push({ key: child.key, ...child.val() }));
+                
+                posts.sort((a,b) => b.time - a.time); // Newest first
+
+                // আমরা পুরো HTML রি-রেন্ডার করব না যদি ইউজার টাইপ করে, 
+                // তবে এখানে সিম্পলিসিটির জন্য রেন্ডার করা হলো। 
+                // স্মার্ট উপায়: ডাটা চেঞ্জ হলে আপডেট করা।
+                
+                if(posts.length === 0) {
+                    container.innerHTML = `<p style="text-align:center; padding:20px;">কোনো পোস্ট নেই</p>`;
+                    return;
+                }
+
+                let html = '';
+                posts.forEach(p => {
+                    const isLiked = p.likedBy && p.likedBy[currentUser.uid];
+                    const likeClass = isLiked ? 'liked' : '';
+                    const likeIcon = isLiked ? 'fas fa-heart' : 'far fa-heart';
+                    
+                    // Comments Process
+                    let commentsHTML = '';
+                    if(p.comments) {
+                        Object.values(p.comments).forEach(c => {
+                            commentsHTML += `<div class="single-comment"><b>${c.user}:</b> ${c.text}</div>`;
+                        });
+                    }
+
+                    // View Count Logic (Session based)
+                    if(!sessionStorage.getItem(`view_${p.key}`)) {
+                        runTransaction(ref(db, `posts/${p.key}/views`), v => (v || 0) + 1);
+                        sessionStorage.setItem(`view_${p.key}`, '1');
+                    }
+
+                    html += `
+                    <div class="card">
+                        <div class="post-header">
+                            <div class="admin-avatar"><i class="fas fa-user-shield"></i></div>
+                            <div>
+                                <h5 style="font-size:16px;">Admin</h5>
+                                <span style="font-size:12px; color:#999;">${p.date}</span>
+                            </div>
+                        </div>
+                        <div style="font-size: 15px; line-height: 1.5; color: #374151;">${p.text}</div>
+                        ${p.img ? `<img src="${p.img}" class="post-img" loading="lazy">` : ''}
+                        
+                        <div style="display:flex; justify-content:space-between; margin-top:10px; font-size:12px; color:#666;">
+                            <span><i class="fas fa-heart" style="color:var(--accent)"></i> ${p.likeCount || 0}</span>
+                            <span>${p.views || 0} Views</span>
+                        </div>
+
+                        <div class="interaction-bar">
+                            <div class="action-pill ${likeClass}" onclick="handleLike('${p.key}')">
+                                <i class="${likeIcon}"></i> লাইক
+                            </div>
+                            <div class="action-pill" onclick="toggleComment('${p.key}')">
+                                <i class="far fa-comment"></i> কমেন্ট
+                            </div>
+                            <div class="action-pill"><i class="fas fa-share"></i> শেয়ার</div>
+                        </div>
+
+                        <div id="comment-box-${p.key}" class="comments-area">
+                            <div class="comment-input-wrp">
+                                <input type="text" id="inp-${p.key}" class="comment-input" placeholder="মতামত লিখুন...">
+                                <button class="send-btn" onclick="sendComment('${p.key}')"><i class="fas fa-paper-plane"></i></button>
+                            </div>
+                            <div style="max-height:150px; overflow-y:auto;">${commentsHTML}</div>
+                        </div>
+                    </div>`;
+                });
+                container.innerHTML = html;
+            });
+        }
+
+        // 2. TEACHERS
+        function loadTeachers() {
+            onValue(ref(db, 'teachers'), (snap) => {
+                const list = document.getElementById('teacher-list');
+                list.innerHTML = '';
+                snap.forEach(c => {
+                    const t = c.val();
+                    list.innerHTML += `
+                    <div class="card profile-card">
+                        <img src="${t.img || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'}" class="p-img">
+                        <div style="flex:1;">
+                            <h5 style="font-size:17px; margin-bottom:2px;">${t.name}</h5>
+                            <span style="color:var(--primary); font-size:13px; font-weight:500;">${t.subject}</span>
+                            <div class="contact-row">
+                                <a href="tel:${t.phone}" class="c-btn" style="background:#10b981"><i class="fas fa-phone"></i> Call</a>
+                                <a href="https://wa.me/${t.phone}" class="c-btn" style="background:#25D366"><i class="fab fa-whatsapp"></i> WA</a>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+            });
+        }
+
+        // 3. DOCTORS
+        function loadDoctors() {
+            onValue(ref(db, 'doctors'), (snap) => {
+                const list = document.getElementById('doctor-list');
+                list.innerHTML = '';
+                snap.forEach(c => {
+                    const d = c.val();
+                    list.innerHTML += `
+                    <div class="card profile-card">
+                        <img src="${d.img || 'https://cdn-icons-png.flaticon.com/512/3774/3774299.png'}" class="p-img" style="border-color:#ef4444;">
+                        <div style="flex:1;">
+                            <h5 style="font-size:17px; margin-bottom:2px;">${d.name}</h5>
+                            <span style="color:#ef4444; font-size:13px; font-weight:500;">${d.specialty}</span>
+                            <p style="font-size:12px; color:#666; margin:4px 0;">${d.chamber || 'Hospital'}</p>
+                            <div class="contact-row">
+                                <a href="tel:${d.phone}" class="c-btn" style="background:#ef4444"><i class="fas fa-phone-alt"></i> সিরিয়াল নিন</a>
+                            </div>
+                        </div>
+                    </div>`;
+                });
+            });
+        }
+
+        // 4. NOTICES
+        function loadNotices() {
+            onValue(ref(db, 'notices'), (snap) => {
+                const list = document.getElementById('notice-list');
+                list.innerHTML = '';
+                const data = [];
+                snap.forEach(c => data.push(c.val()));
+                data.reverse().forEach(n => {
+                    list.innerHTML += `
+                    <div class="notice-item">
+                        <h5 style="font-size:16px;">${n.title}</h5>
+                        <div style="font-size:12px; color:#888; margin:5px 0;"><i class="far fa-clock"></i> ${n.date}</div>
+                        <p style="font-size:14px; color:#444;">${n.desc}</p>
+                        ${n.link ? `<a href="${n.link}" target="_blank" style="display:inline-block; margin-top:8px; color:var(--primary); font-size:13px; font-weight:600;"><i class="fas fa-link"></i> বিস্তারিত দেখুন</a>` : ''}
+                    </div>`;
+                });
+            });
+        }
+
+        // --- ACTIONS ---
+        window.handleLike = (key) => {
+            if(!currentUser) return;
+            const postRef = ref(db, `posts/${key}`);
+            runTransaction(postRef, (post) => {
+                if (post) {
+                    if (!post.likedBy) post.likedBy = {};
+                    if (post.likedBy[currentUser.uid]) {
+                        post.likeCount--;
+                        post.likedBy[currentUser.uid] = null;
+                    } else {
+                        post.likeCount = (post.likeCount || 0) + 1;
+                        post.likedBy[currentUser.uid] = true;
+                    }
+                }
+                return post;
+            });
+        };
+
+        window.toggleComment = (key) => {
+            const box = document.getElementById(`comment-box-${key}`);
+            box.style.display = box.style.display === 'block' ? 'none' : 'block';
+        };
+
+        window.sendComment = (key) => {
+            const inp = document.getElementById(`inp-${key}`);
+            const txt = inp.value.trim();
+            if(!txt) return;
+
+            push(ref(db, `posts/${key}/comments`), {
+                user: userData.name || "Student",
+                text: txt,
+                uid: currentUser.uid,
+                time: Date.now()
+            });
+            inp.value = '';
+        };
+
+        // --- RESULT SEARCH ---
+        window.fetchResult = () => {
+            const cls = document.getElementById('res-class').value;
+            const roll = document.getElementById('res-roll').value;
+            
+            if(!cls || !roll) return alert("শ্রেণী এবং রোল নম্বর দিন");
+
+            // Path must match Admin Panel Structure: results/{class}/{roll}
+            get(ref(db, `results/${cls}/${roll}`)).then(snap => {
+                if(snap.exists()) {
+                    const data = snap.val();
+                    const sheet = document.getElementById('marksheet');
+                    
+                    document.getElementById('ms-school-name').innerText = data.school || "Your School Name";
+                    if(data.logo) document.getElementById('ms-logo').src = data.logo;
+                    
+                    document.getElementById('ms-name').innerText = data.name;
+                    document.getElementById('ms-roll').innerText = roll;
+                    document.getElementById('ms-class').innerText = cls;
+                    document.getElementById('ms-gpa').innerText = data.finalGPA;
+
+                    const tbody = document.getElementById('ms-body');
+                    tbody.innerHTML = '';
+                    
+                    if(data.subjects) {
+                        data.subjects.forEach(sub => {
+                            tbody.innerHTML += `
+                            <tr>
+                                <td style="text-align:left">${sub.subject}</td>
+                                <td>${sub.mark}</td>
+                                <td>${getGrade(sub.mark)}</td>
+                                <td>${sub.gpa}</td>
+                            </tr>`;
+                        });
+                    }
+                    
+                    sheet.style.display = 'block';
+                } else {
+                    alert("দুঃখিত, কোনো ফলাফল পাওয়া যায়নি!");
+                    document.getElementById('marksheet').style.display = 'none';
+                }
+            });
+        };
+
+        function getGrade(mark) {
+            if(mark >= 80) return 'A+';
+            if(mark >= 70) return 'A';
+            if(mark >= 60) return 'A-';
+            if(mark >= 50) return 'B';
+            if(mark >= 40) return 'C';
+            if(mark >= 33) return 'D';
+            return 'F';
+        }
+
+    </script>
+</body>
+</html>
